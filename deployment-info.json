@@ -51,6 +51,18 @@
         "backend"
       ],
       "frontendHostingMethod": "HTTPS"
+    },
+    {
+      "name": "meter2bab",
+      "provider": "CARS",
+      "CARSCloudURL": "https://cars.babbage.systems",
+      "projectID": "91059bf8c0beecb8fdb5962a1fd94c5c",
+      "network": "mainnet",
+      "deploy": [
+        "frontend",
+        "backend"
+      ],
+      "frontendHostingMethod": "HTTPS"
     }
   ]
 }
