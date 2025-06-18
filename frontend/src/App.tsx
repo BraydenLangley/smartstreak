@@ -131,7 +131,7 @@ const App: React.FC = () => {
       const txid = transaction.id('hex')
 
       const args: SHIPBroadcasterConfig = {
-        networkPreset: 'local'
+        networkPreset: (await walletClient.getNetwork({})).network
       }
       const broadcaster = new SHIPBroadcaster(['tm_meter'], args)
       const broadcasterResult = await broadcaster.broadcast(transaction)
@@ -169,7 +169,7 @@ const App: React.FC = () => {
         let lookupResult: any = undefined
 
         try {
-          const resolver = new LookupResolver({ networkPreset: 'local' })
+          const resolver = new LookupResolver({ networkPreset: (await walletClient.getNetwork({})).network })
           lookupResult = await resolver.query({
             service: 'ls_meter',
             query: { findAll: true }
@@ -357,7 +357,7 @@ const App: React.FC = () => {
       facilitator.allowHTTP = true // Manually override in case constructor ignores it
 
       const args: SHIPBroadcasterConfig = {
-        networkPreset: 'local',
+        networkPreset: (await walletClient.getNetwork({})).network,
         facilitator,
         requireAcknowledgmentFromAnyHostForTopics: 'any'
       }
@@ -501,7 +501,7 @@ const App: React.FC = () => {
       facilitator.allowHTTP = true // Manually override in case constructor ignores it
 
       const args: SHIPBroadcasterConfig = {
-        networkPreset: 'local',
+        networkPreset: (await walletClient.getNetwork({})).network,
         facilitator,
         requireAcknowledgmentFromAnyHostForTopics: 'any'
       }
