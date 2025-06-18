@@ -2,7 +2,11 @@ import {
   LookupService,
   LookupQuestion,
   LookupAnswer,
-  LookupFormula
+  LookupFormula,
+  AdmissionMode,
+  SpendNotificationMode,
+  OutputAdmittedByTopic,
+  OutputSpent
 } from '@bsv/overlay'
 import { MeterStorage } from './MeterStorage.js'
 import { Script, Utils } from '@bsv/sdk'
@@ -20,34 +24,33 @@ MeterContract.loadArtifact(meterContractJson)
  * @public
  */
 class MeterLookupService implements LookupService {
+  readonly admissionMode: AdmissionMode = 'locking-script'
+  readonly spendNotificationMode: SpendNotificationMode = 'none'
+
   /**
    * Constructs a new MeterLookupService instance
    * @param storage - The storage instance to use for managing records
    */
-  constructor(public storage: MeterStorage) {}
+  constructor(public storage: MeterStorage) { }
 
   /**
    * Notifies the lookup service of a new output added.
    *
-   * @param {string} txid - The transaction ID containing the output.
-   * @param {number} outputIndex - The index of the output in the transaction.
-   * @param {Script} outputScript - The script of the output to be processed.
-   * @param {string} topic - The topic associated with the output.
+   * @param {OutputAdmittedByTopic} payload - The payload of the output to be processed.
    *
    * @returns {Promise<void>} A promise that resolves when the processing is complete.
    * @throws Will throw an error if there is an issue with storing the record in the storage engine.
    */
-  async outputAdded?(
-    txid: string,
-    outputIndex: number,
-    outputScript: Script,
-    topic: string
+  async outputAdmittedByTopic(
+    payload: OutputAdmittedByTopic
   ): Promise<void> {
+    if (payload.mode !== 'locking-script') throw new Error('Invalid payload')
+    const { txid, outputIndex, topic, lockingScript } = payload
     if (topic !== 'tm_meter') return
     try {
       // Decode the Meter token fields from the Bitcoin outputScript with the contract class
       const meter = MeterContract.fromLockingScript(
-        outputScript.toHex()
+        lockingScript.toHex()
       ) as MeterContract
 
       // Parse out the message field
@@ -71,15 +74,13 @@ class MeterLookupService implements LookupService {
 
   /**
    * Notifies the lookup service that an output was spent
-   * @param txid - The transaction ID of the spent output
-   * @param outputIndex - The index of the spent output
-   * @param topic - The topic associated with the spent output
+   * @param payload - The payload of the output to be processed.
    */
   async outputSpent?(
-    txid: string,
-    outputIndex: number,
-    topic: string
+    payload: OutputSpent
   ): Promise<void> {
+    if (payload.mode !== 'none') throw new Error('Invalid payload')
+    const { topic, txid, outputIndex } = payload
     if (topic !== 'tm_meter') return
     await this.storage.deleteRecord(txid, outputIndex)
   }
@@ -88,14 +89,10 @@ class MeterLookupService implements LookupService {
    * Notifies the lookup service that an output has been deleted
    * @param txid - The transaction ID of the deleted output
    * @param outputIndex - The index of the deleted output
-   * @param topic - The topic associated with the deleted output
    */
-  async outputDeleted?(
-    txid: string,
-    outputIndex: number,
-    topic: string
+  async outputEvicted(
+    txid: string, outputIndex: number
   ): Promise<void> {
-    if (topic !== 'tm_meter') return
     await this.storage.deleteRecord(txid, outputIndex)
   }
 
@@ -106,7 +103,7 @@ class MeterLookupService implements LookupService {
    */
   async lookup(
     question: LookupQuestion
-  ): Promise<LookupAnswer | LookupFormula> {
+  ): Promise<LookupFormula> {
     if (question.query === undefined || question.query === null) {
       throw new Error('A valid query must be provided!')
     }
