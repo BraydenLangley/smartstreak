@@ -38,7 +38,7 @@ MeterContract.loadArtifact(MeterArtifact)
 import { bsv, toByteString } from 'scrypt-ts'
 import { Card } from '@mui/material'
 import { CardContent } from '@mui/material'
-import { CreateActionArgs } from '@babbage/sdk-ts/out/src/sdk'
+import { CreateActionArgs } from '@bsv/sdk'
 
 // Only used to verify signature
 const anyoneWallet = new ProtoWallet('anyone')
