@@ -1,4 +1,4 @@
-## Meter for the New World
+## Streaks for the New World
 If you have problems accessing hosts:
 `broadcasterResult.description: All local topical hosts have rejected the transaction.`
 

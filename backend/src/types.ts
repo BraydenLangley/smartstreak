@@ -1,9 +1,14 @@
-export interface MeterRecord {
+export interface StreakRecord {
   txid: string
   outputIndex: number
-  value: number
+  lockingScript: string
+  satoshis: number
+  count: number
+  dayStamp: number
   creatorIdentityKey: string
-  createdAt: Date
+  namespace: string
+  cadenceDays: number
+  updatedAt: Date
 }
 
 export interface UTXOReference {
