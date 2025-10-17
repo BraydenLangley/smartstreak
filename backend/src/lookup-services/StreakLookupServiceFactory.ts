@@ -14,8 +14,8 @@ import { StreakContract } from '../contracts/Streak.js'
 import { Db } from 'mongodb'
 import {
   StreakStorage,
-  FindActiveOptions,
-  FindBrokenSinceOptions,
+  FindActiveAtHeightOptions,
+  FindBrokenSinceHeightOptions,
   FindByCreatorOptions,
   FindTopOptions
 } from './StreakStorage.js'
@@ -26,9 +26,9 @@ class StreakLookupService implements LookupService {
   readonly admissionMode: AdmissionMode = 'locking-script'
   readonly spendNotificationMode: SpendNotificationMode = 'none'
 
-  constructor (public storage: StreakStorage) {}
+  constructor(public storage: StreakStorage) { }
 
-  async outputAdmittedByTopic (payload: OutputAdmittedByTopic): Promise<void> {
+  async outputAdmittedByTopic(payload: OutputAdmittedByTopic): Promise<void> {
     if (payload.mode !== 'locking-script') throw new Error('Invalid payload')
     const { txid, outputIndex, topic, lockingScript, satoshis } = payload
     if (topic !== 'tm_streaks') return
@@ -39,7 +39,7 @@ class StreakLookupService implements LookupService {
       ) as StreakContract
 
       const count = Number(streak.count)
-      const dayStamp = Number(streak.dayStamp)
+      const blockHeight = Number(streak.blockHeight)
       const creatorIdentityKey = Utils.toHex(
         Utils.toArray(streak.creatorIdentityKey, 'hex')
       )
@@ -54,7 +54,7 @@ class StreakLookupService implements LookupService {
         lockingScript: lockingScript.toHex(),
         satoshis,
         count,
-        dayStamp,
+        blockHeight,
         creatorIdentityKey,
         namespace,
         cadenceDays
@@ -64,18 +64,18 @@ class StreakLookupService implements LookupService {
     }
   }
 
-  async outputSpent? (payload: OutputSpent): Promise<void> {
+  async outputSpent?(payload: OutputSpent): Promise<void> {
     if (payload.mode !== 'none') throw new Error('Invalid payload')
     const { topic, txid, outputIndex } = payload
     if (topic !== 'tm_streaks') return
     await this.storage.deleteRecord(txid, outputIndex)
   }
 
-  async outputEvicted (txid: string, outputIndex: number): Promise<void> {
+  async outputEvicted(txid: string, outputIndex: number): Promise<void> {
     await this.storage.deleteRecord(txid, outputIndex)
   }
 
-  async lookup (question: LookupQuestion): Promise<LookupFormula> {
+  async lookup(question: LookupQuestion): Promise<LookupFormula> {
     if (question.query === undefined || question.query === null) {
       throw new Error('A valid query must be provided!')
     }
@@ -105,31 +105,31 @@ class StreakLookupService implements LookupService {
       return await this.storage.findTop(options)
     }
 
-    if (query.findActiveForDate) {
-      const options: FindActiveOptions = {
-        namespace: query.findActiveForDate.namespace,
-        dayStamp: query.findActiveForDate.dayStamp
+    if (query.findActiveAtHeight) {
+      const options: FindActiveAtHeightOptions = {
+        namespace: query.findActiveAtHeight.namespace,
+        blockHeight: query.findActiveAtHeight.blockHeight
       }
-      return await this.storage.findActiveForDate(options)
+      return await this.storage.findActiveAtHeight(options)
     }
 
-    if (query.findBrokenSince) {
-      const options: FindBrokenSinceOptions = {
-        namespace: query.findBrokenSince.namespace,
-        referenceDayStamp: query.findBrokenSince.referenceDayStamp
+    if (query.findBrokenSinceHeight) {
+      const options: FindBrokenSinceHeightOptions = {
+        namespace: query.findBrokenSinceHeight.namespace,
+        referenceBlockHeight: query.findBrokenSinceHeight.referenceBlockHeight
       }
-      return await this.storage.findBrokenSince(options)
+      return await this.storage.findBrokenSinceHeight(options)
     }
 
     const mess = JSON.stringify(question, null, 2)
     throw new Error(`Unsupported query:${mess}`)
   }
 
-  async getDocumentation (): Promise<string> {
+  async getDocumentation(): Promise<string> {
     return docs
   }
 
-  async getMetaData (): Promise<{
+  async getMetaData(): Promise<{
     name: string
     shortDescription: string
     iconURL?: string

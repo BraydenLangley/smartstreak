@@ -103,6 +103,16 @@ const App: React.FC = () => {
   const [namespace, setNamespace] = useState<string>('appaday')
   const [cadenceDays, setCadenceDays] = useState<string>('1')
   const [advancingIndex, setAdvancingIndex] = useState<number | null>(null)
+  const [currentUserIdentityKey, setCurrentUserIdentityKey] = useState<string | null>(null)
+
+  const getCurrentUserIdentityKey = async (): Promise<void> => {
+    try {
+      const publicKey = (await walletClient.getPublicKey({ identityKey: true })).publicKey
+      setCurrentUserIdentityKey(publicKey)
+    } catch (error) {
+      console.error('Failed to get current user identity key:', error)
+    }
+  }
 
   const refreshStreaks = async (): Promise<void> => {
     setStreaksLoading(true)
@@ -180,6 +190,7 @@ const App: React.FC = () => {
   }
 
   useAsyncEffect(() => {
+    getCurrentUserIdentityKey()
     refreshStreaks()
   }, [])
 
@@ -470,6 +481,7 @@ const App: React.FC = () => {
           const today = getTodayStamp()
           const isBroken = today > nextExpected
           const canAdvance = today === nextExpected
+          const isOwner = currentUserIdentityKey === streak.creatorIdentityKey
 
           return (
             <ListItem key={`${streak.namespace}-${streak.creatorIdentityKey}-${index}`}>
@@ -480,11 +492,33 @@ const App: React.FC = () => {
                     <Typography variant='body1'>Current streak: {streak.count} day(s)</Typography>
                     <Typography variant='body2'>Last tick: {formatDayStamp(streak.dayStamp)}</Typography>
                     <Typography variant='body2'>Cadence: every {streak.cadenceDays} day(s)</Typography>
+                    <Typography 
+                      variant='body2' 
+                      sx={{ 
+                        color: 'text.secondary',
+                        fontFamily: 'monospace',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        '&:hover': { color: 'primary.main' }
+                      }}
+                      onClick={() => {
+                        navigator.clipboard.writeText(streak.creatorIdentityKey)
+                        toast.dark('Creator identity key copied!')
+                      }}
+                      title='Click to copy full identity key'
+                    >
+                      Creator: {streak.creatorIdentityKey.slice(0, 8)}...{streak.creatorIdentityKey.slice(-8)}
+                    </Typography>
                     {renderStreakStatus(streak)}
+                    {!isOwner && (
+                      <Typography variant='body2' sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                        Only the creator can advance this streak
+                      </Typography>
+                    )}
                     <Stack direction='row' spacing={1}>
                       <Button
                         variant='contained'
-                        disabled={!canAdvance || advancingIndex === index || createLoading}
+                        disabled={!canAdvance || !isOwner || advancingIndex === index || createLoading}
                         onClick={() => handleAdvance(index)}
                       >
                         Tick today
@@ -492,7 +526,7 @@ const App: React.FC = () => {
                       <Button
                         variant='outlined'
                         onClick={() => handleStartOver(streak.namespace)}
-                        disabled={createLoading}
+                        disabled={!isOwner || createLoading}
                       >
                         Start over
                       </Button>

@@ -17,7 +17,7 @@
     "noEmit": true,
     "plugins": [
       {
-        "transform": "./node_modules/scrypt-ts-transpiler/dist/index.js",
+        "transform": "/Users/braydenlangley/Projects/Babbage/smartstreak/backend/node_modules/scrypt-ts-transpiler/dist/index.js",
         "transformProgram": true,
         "outDir": "artifacts"
       }

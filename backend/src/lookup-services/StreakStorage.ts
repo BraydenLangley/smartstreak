@@ -12,14 +12,14 @@ export interface FindByCreatorOptions {
   namespace?: string
 }
 
-export interface FindActiveOptions {
+export interface FindActiveAtHeightOptions {
   namespace?: string
-  dayStamp: number
+  blockHeight: number
 }
 
-export interface FindBrokenSinceOptions {
+export interface FindBrokenSinceHeightOptions {
   namespace?: string
-  referenceDayStamp: number
+  referenceBlockHeight: number
 }
 
 export class StreakStorage {
@@ -33,7 +33,7 @@ export class StreakStorage {
   private async ensureIndexes (): Promise<void> {
     await this.records.createIndex({ creatorIdentityKey: 1, namespace: 1 })
     await this.records.createIndex({ namespace: 1, count: -1 })
-    await this.records.createIndex({ creatorIdentityKey: 1, namespace: 1, dayStamp: -1 })
+    await this.records.createIndex({ creatorIdentityKey: 1, namespace: 1, blockHeight: -1 })
     await this.records.createIndex({ count: -1 })
   }
 
@@ -90,8 +90,8 @@ export class StreakStorage {
     return records.map(record => ({ txid: record.txid, outputIndex: record.outputIndex }))
   }
 
-  async findActiveForDate ({ namespace, dayStamp }: FindActiveOptions): Promise<LookupFormula> {
-    const query: Partial<StreakRecord> = { dayStamp }
+  async findActiveAtHeight ({ namespace, blockHeight }: FindActiveAtHeightOptions): Promise<LookupFormula> {
+    const query: Partial<StreakRecord> = { blockHeight }
     if (namespace !== undefined) {
       query.namespace = namespace
     }
@@ -100,13 +100,13 @@ export class StreakStorage {
     return records.map(record => ({ txid: record.txid, outputIndex: record.outputIndex }))
   }
 
-  async findBrokenSince ({ namespace, referenceDayStamp }: FindBrokenSinceOptions): Promise<LookupFormula> {
+  async findBrokenSinceHeight ({ namespace, referenceBlockHeight }: FindBrokenSinceHeightOptions): Promise<LookupFormula> {
     const match: any = {
       $expr: {
         $lt: [
-          '$dayStamp',
+          '$blockHeight',
           {
-            $subtract: [referenceDayStamp, '$cadenceDays']
+            $subtract: [referenceBlockHeight, { $multiply: ['$cadenceDays', 144] }]
           }
         ]
       }

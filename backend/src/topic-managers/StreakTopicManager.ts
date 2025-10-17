@@ -8,35 +8,24 @@ StreakContract.loadArtifact(streakContractJson)
 
 const anyoneWallet = new ProtoWallet('anyone')
 
-const getTodayStamp = (): number => {
-  const today = new Date()
-  const yyyy = today.getUTCFullYear()
-  const mm = String(today.getUTCMonth() + 1).padStart(2, '0')
-  const dd = String(today.getUTCDate()).padStart(2, '0')
-  return Number(`${yyyy}${mm}${dd}`)
-}
-
 export interface StreakTopicManagerOptions {
-  enforceDailyCadence?: boolean
   enforceSingleTickPerDay?: boolean
 }
 
 const defaultOptions: Required<StreakTopicManagerOptions> = {
-  enforceDailyCadence: true,
   enforceSingleTickPerDay: true
 }
 
 export default class StreakTopicManager implements TopicManager {
-  constructor (private readonly options: StreakTopicManagerOptions = {}) {}
+  constructor(private readonly options: StreakTopicManagerOptions = {}) { }
 
-  async identifyAdmissibleOutputs (
+  async identifyAdmissibleOutputs(
     beef: number[],
     previousCoins: number[]
   ): Promise<AdmittanceInstructions> {
     const outputsToAdmit: number[] = []
     const mergedOptions = { ...defaultOptions, ...this.options }
-    const seenForDay = new Set<string>()
-    const todayUTC = getTodayStamp()
+    const seenInBatch = new Set<string>()
 
     try {
       const parsedTransaction = Transaction.fromBEEF(beef)
@@ -59,7 +48,6 @@ export default class StreakTopicManager implements TopicManager {
           }
 
           const cadence = Number(streak.cadenceDays)
-          const dayStamp = Number(streak.dayStamp)
           const namespace = Utils.toUTF8(
             Utils.toArray(streak.namespace, 'hex')
           )
@@ -67,18 +55,12 @@ export default class StreakTopicManager implements TopicManager {
             Utils.toArray(streak.creatorIdentityKey, 'hex')
           )
 
-          if (mergedOptions.enforceDailyCadence && cadence === 1) {
-            if (dayStamp !== todayUTC) {
-              throw new Error('Daily streaks must use today\'s UTC day stamp')
-            }
-          }
-
           if (mergedOptions.enforceSingleTickPerDay && cadence === 1) {
-            const seenKey = `${identityKey}:${namespace}:${dayStamp}`
-            if (seenForDay.has(seenKey)) {
+            const seenKey = `${identityKey}:${namespace}:${streak.blockHeight}`
+            if (seenInBatch.has(seenKey)) {
               throw new Error('Duplicate daily tick for identity and namespace')
             }
-            seenForDay.add(seenKey)
+            seenInBatch.add(seenKey)
           }
 
           outputsToAdmit.push(i)
@@ -103,11 +85,11 @@ export default class StreakTopicManager implements TopicManager {
     }
   }
 
-  async getDocumentation (): Promise<string> {
+  async getDocumentation(): Promise<string> {
     return docs
   }
 
-  async getMetaData (): Promise<{
+  async getMetaData(): Promise<{
     name: string
     shortDescription: string
     iconURL?: string

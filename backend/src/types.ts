@@ -4,7 +4,7 @@ export interface StreakRecord {
   lockingScript: string
   satoshis: number
   count: number
-  dayStamp: number
+  blockHeight: number
   creatorIdentityKey: string
   namespace: string
   cadenceDays: number
