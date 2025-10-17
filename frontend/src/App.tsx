@@ -46,6 +46,12 @@ StreakContract.loadArtifact(StreakArtifact)
 const anyoneWallet = new ProtoWallet('anyone')
 const walletClient = new WalletClient()
 
+// Network configuration - easily switch between 'local' (for lars) and 'mainnet'
+// Change this value to switch networks:
+// - 'local' for development with lars
+// - 'mainnet' for production
+const NETWORK_PRESET: 'local' | 'mainnet' = 'mainnet'
+
 const AppBarPlaceholder = styled('div')({
   height: '4em'
 })
@@ -102,7 +108,7 @@ const App: React.FC = () => {
     setStreaksLoading(true)
     try {
       const resolver = new LookupResolver({
-        networkPreset: (await walletClient.getNetwork({})).network
+        networkPreset: NETWORK_PRESET
       })
       const lookupResult = await resolver.query({
         service: 'ls_streaks',
@@ -192,7 +198,8 @@ const App: React.FC = () => {
       }
 
       setCreateLoading(true)
-      const network = await walletClient.getNetwork({})
+      // Using configurable network preset
+      const network = { network: NETWORK_PRESET }
       const publicKey = (await walletClient.getPublicKey({ identityKey: true }))
         .publicKey
 
@@ -238,7 +245,7 @@ const App: React.FC = () => {
       const txid = transaction.id('hex')
 
       const broadcaster = new SHIPBroadcaster(['tm_streaks'], {
-        networkPreset: network.network
+        networkPreset: NETWORK_PRESET
       } satisfies SHIPBroadcasterConfig)
 
       const broadcastResult = await broadcaster.broadcast(transaction)
@@ -323,7 +330,7 @@ const App: React.FC = () => {
           )
           self.to = { tx: bsvtx, inputIndex: 0 }
           self.from = { tx: parsedFromTx, outputIndex: 0 }
-          ;(self as StreakContract).advanceOnChain(BigInt(today))
+            ; (self as StreakContract).advanceOnChain(BigInt(today))
         }
       )
 
@@ -360,7 +367,7 @@ const App: React.FC = () => {
       facilitator.allowHTTP = true
 
       const broadcaster = new SHIPBroadcaster(['tm_streaks'], {
-        networkPreset: (await walletClient.getNetwork({})).network,
+        networkPreset: NETWORK_PRESET,
         facilitator,
         requireAcknowledgmentFromAnyHostForTopics: 'any'
       })
@@ -432,7 +439,7 @@ const App: React.FC = () => {
       <AppBar position='fixed'>
         <Toolbar>
           <Typography variant='h6' sx={{ flexGrow: 1 }}>
-            Streaks — Keep the chain alive.
+            SmartStreak — Keep the chain alive.
           </Typography>
           <GitHubIconStyle
             component='a'
@@ -517,7 +524,7 @@ const App: React.FC = () => {
               fullWidth
               required
               value={namespace}
-              onChange={event => setNamespace(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setNamespace(event.target.value)}
             />
             <TextField
               margin='dense'
@@ -527,7 +534,7 @@ const App: React.FC = () => {
               required
               value={cadenceDays}
               inputProps={{ min: 1 }}
-              onChange={event => setCadenceDays(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setCadenceDays(event.target.value)}
             />
           </DialogContent>
           <DialogActions>
