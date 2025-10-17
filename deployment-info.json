@@ -29,34 +29,10 @@
       ]
     },
     {
-      "name": "atx",
-      "provider": "CARS",
-      "CARSCloudURL": "https://cars.atx.systems",
-      "projectID": "28aa5632cc9f2974234bba40ff00f20d",
-      "network": "mainnet",
-      "deploy": [
-        "frontend",
-        "backend"
-      ],
-      "frontendHostingMethod": "HTTPS"
-    },
-    {
-      "name": "babbage",
+      "name": "SmartStreak",
       "provider": "CARS",
       "CARSCloudURL": "https://cars.babbage.systems",
-      "projectID": "161a4f0f091010a0f8a34a5d1d1b9dd7",
-      "network": "mainnet",
-      "deploy": [
-        "frontend",
-        "backend"
-      ],
-      "frontendHostingMethod": "HTTPS"
-    },
-    {
-      "name": "streaks2bab",
-      "provider": "CARS",
-      "CARSCloudURL": "https://cars.babbage.systems",
-      "projectID": "91059bf8c0beecb8fdb5962a1fd94c5c",
+      "projectID": "79da225862385627ae1198e56771e712",
       "network": "mainnet",
       "deploy": [
         "frontend",
