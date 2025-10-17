@@ -8,8 +8,11 @@ export interface Token {
   satoshis: SatoshiValue
 }
 
-export interface Meter {
-  value: number
-  token: Token
+export interface Streak {
+  count: number
+  dayStamp: number
+  cadenceDays: number
+  namespace: string
   creatorIdentityKey: PubKeyHex
+  token: Token
 }

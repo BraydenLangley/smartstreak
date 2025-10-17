@@ -1,39 +1,34 @@
-
-contract MeterContract {
+contract StreakContract {
   @state int count;
+  @state int dayStamp;
   @state bytes creatorIdentityKey;
   @state bytes creatorSignature;
+  @state bytes namespace;
+  @state int cadenceDays;
   bytes __scrypt_ts_ctx_hashoutputs;
   int __scrypt_ts_ctx_value;
-  constructor(int count, bytes creatorIdentityKey, bytes creatorSignature) {
+  constructor(int count, int dayStamp, bytes creatorIdentityKey, bytes creatorSignature, bytes namespace, int cadenceDays) {
     this.count = count;
+    this.dayStamp = dayStamp;
     this.creatorIdentityKey = creatorIdentityKey;
     this.creatorSignature = creatorSignature;
+    this.namespace = namespace;
+    this.cadenceDays = cadenceDays;
   }
-  public function incrementOnChain(SigHashPreimage __scrypt_ts_txPreimage) {
+  public function advanceOnChain(SigHashPreimage __scrypt_ts_txPreimage, int nextDayStamp) {
     require(Tx.checkPreimageSigHashType(__scrypt_ts_txPreimage, SigHashType(b'c3')));
     this.__scrypt_ts_ctx_hashoutputs = SigHash.hashOutputs(__scrypt_ts_txPreimage);
     this.__scrypt_ts_ctx_value = SigHash.value(__scrypt_ts_txPreimage);
-    this.increment();
+    this.advance(nextDayStamp);
     int amount = this.__scrypt_ts_ctx_value;
     bytes outputs = this.buildStateOutput(amount);
     require(this.__scrypt_ts_ctx_hashoutputs == hash256(outputs));
   }
-  function increment() : bool {
+  function advance(int nextDayStamp) : bool {
+    int expectedNext = this.dayStamp + this.cadenceDays;
+    require(nextDayStamp == expectedNext);
     this.count++;
-    return true;
-  }
-  public function decrementOnChain(SigHashPreimage __scrypt_ts_txPreimage) {
-    require(Tx.checkPreimageSigHashType(__scrypt_ts_txPreimage, SigHashType(b'c3')));
-    this.__scrypt_ts_ctx_hashoutputs = SigHash.hashOutputs(__scrypt_ts_txPreimage);
-    this.__scrypt_ts_ctx_value = SigHash.value(__scrypt_ts_txPreimage);
-    this.decrement();
-    int amount = this.__scrypt_ts_ctx_value;
-    bytes outputs = this.buildStateOutput(amount);
-    require(this.__scrypt_ts_ctx_hashoutputs == hash256(outputs));
-  }
-  function decrement() : bool {
-    this.count--;
+    this.dayStamp = nextDayStamp;
     return true;
   }
   function buildStateOutput(int amount) : bytes {  return Utils.buildOutput(this.getStateScript(), amount);}
